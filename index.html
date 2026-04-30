@@ -69,8 +69,16 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-    const DATA_FILE = "data.geojson";
-    const TITLE_FILE = "title.txt";
+    const params = new URLSearchParams(window.location.search);
+    const badgeNo = params.get("badge");
+
+    if (!badgeNo) {
+      throw new Error("לא הוגדר badge בכתובת");
+    }
+
+    const DATA_FILE = `json/Badge_${badgeNo}/data.geojson`;
+    const TITLE_FILE = `json/Badge_${badgeNo}/title.txt`;
+    const MAIN_BADGE_NAME = `#${badgeNo}`;
 
     const map = L.map("map", {
       preferCanvas: true
@@ -80,8 +88,8 @@
       attribution: "&copy; OpenStreetMap contributors"
     }).addTo(map);
 
-    const mainLayer = L.layerGroup();
-    const otherLayer = L.layerGroup();
+    const mainBadgeLayer = L.layerGroup();
+    const relatedBadgesLayer = L.layerGroup();
 
     function safeText(value) {
       return value == null ? "" : String(value).trim();
@@ -113,39 +121,8 @@
       ]));
     }
 
-    function extractBadgeFromTitle(title) {
-      const m = String(title).match(/#\s*(\d+)/);
-      return m ? m[1] : "";
-    }
-
-    function extractBadgeFromGeoJson(geojson) {
-      if (!geojson || !Array.isArray(geojson.features)) return "";
-
-      const counts = {};
-
-      geojson.features.forEach(feature => {
-        const name = getFeatureName(feature);
-        const m = name.match(/^#\s*(\d+)$/);
-        if (m) {
-          counts[m[1]] = (counts[m[1]] || 0) + 1;
-        }
-      });
-
-      let bestBadge = "";
-      let bestCount = 0;
-
-      Object.keys(counts).forEach(badge => {
-        if (counts[badge] > bestCount) {
-          bestBadge = badge;
-          bestCount = counts[badge];
-        }
-      });
-
-      return bestBadge;
-    }
-
     function setMapTitle(title) {
-      const cleanTitle = safeText(title) || "מפת יעל";
+      const cleanTitle = safeText(title) || `מפה אישית עבור יעל # ${badgeNo}`;
 
       document.title = cleanTitle;
 
@@ -185,42 +162,28 @@
         if (!response.ok) throw new Error("title not found");
         return (await response.text()).trim();
       } catch {
-        return "";
+        return `מפה אישית עבור יעל # ${badgeNo}`;
       }
     }
 
     async function loadMap() {
-      const titleFromFile = await loadTitle();
+      const title = await loadTitle();
+      setMapTitle(title);
 
       const response = await fetch(DATA_FILE, { cache: "no-store" });
+
       if (!response.ok) {
         throw new Error("לא נמצא קובץ data.geojson");
       }
 
       const geojson = await response.json();
-
-      let badgeNo = extractBadgeFromTitle(titleFromFile);
-      if (!badgeNo) {
-        badgeNo = extractBadgeFromGeoJson(geojson);
-      }
-
-      const mainName = "#" + badgeNo;
-
-      const finalTitle = titleFromFile || (
-        badgeNo
-          ? `מפה אישית עבור יעל # ${badgeNo}`
-          : "מפה אישית עבור יעל"
-      );
-
-      setMapTitle(finalTitle);
-
-      const boundsLayers = [];
+      const allFeatureLayers = [];
 
       geojson.features.forEach(feature => {
         const pointName = getFeatureName(feature);
-        const isMain = badgeNo && pointName === mainName;
+        const isMain = pointName === MAIN_BADGE_NAME;
 
-        const singleFeatureLayer = L.geoJSON(feature, {
+        const featureLayer = L.geoJSON(feature, {
           pointToLayer: function (feature, latlng) {
             return createMarker(feature, latlng, isMain);
           },
@@ -230,34 +193,28 @@
         });
 
         if (isMain) {
-          singleFeatureLayer.addTo(mainLayer);
+          featureLayer.addTo(mainBadgeLayer);
         } else {
-          singleFeatureLayer.addTo(otherLayer);
+          featureLayer.addTo(relatedBadgesLayer);
         }
 
-        boundsLayers.push(singleFeatureLayer);
+        allFeatureLayers.push(featureLayer);
       });
 
-      mainLayer.addTo(map);
-      otherLayer.addTo(map);
+      mainBadgeLayer.addTo(map);
+      relatedBadgesLayer.addTo(map);
 
-      const overlays = {};
-
-      if (badgeNo) {
-        overlays[`יעל #${badgeNo}`] = mainLayer;
-      } else {
-        overlays["יעל ראשי"] = mainLayer;
-      }
-
-      overlays["נלווים / יעלים אחרים"] = otherLayer;
-
-      L.control.layers(null, overlays, {
+      L.control.layers(null, {
+        [`יעל #${badgeNo}`]: mainBadgeLayer,
+        "נלווים / יעלים אחרים": relatedBadgesLayer
+      }, {
         collapsed: false
       }).addTo(map);
 
-      const allLayers = L.featureGroup(boundsLayers);
-      if (boundsLayers.length > 0) {
-        map.fitBounds(allLayers.getBounds(), {
+      if (allFeatureLayers.length > 0) {
+        const allLayersGroup = L.featureGroup(allFeatureLayers);
+
+        map.fitBounds(allLayersGroup.getBounds(), {
           padding: [30, 30],
           maxZoom: 14
         });
