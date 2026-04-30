@@ -1,121 +1,278 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <title>מפת יעל</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
 
-  <link rel="stylesheet" href="css/app.css" />
+  <style>
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    #titleBox {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      font-size: 18px;
+      font-weight: bold;
+      max-width: calc(100vw - 40px);
+    }
+
+    .leaflet-popup-content {
+      direction: rtl;
+      text-align: right;
+      font-family: Arial, sans-serif;
+    }
+
+    .leaflet-popup-content img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .badge-main-marker {
+      background: #1976d2;
+      border: 2px solid white;
+      border-radius: 50%;
+      width: 14px;
+      height: 14px;
+      box-shadow: 0 0 4px rgba(0,0,0,0.5);
+    }
+
+    .badge-other-marker {
+      background: #f57c00;
+      border: 2px solid white;
+      border-radius: 50%;
+      width: 12px;
+      height: 12px;
+      box-shadow: 0 0 4px rgba(0,0,0,0.5);
+    }
+  </style>
 </head>
 
 <body>
-<div id="map"></div>
+  <div id="titleBox">טוען מפה...</div>
+  <div id="map"></div>
 
-<div class="map-header">
-  <div class="map-header-box">
-    <img class="header-icon" src="icons/header-right.png">
-    <span id="mapTitleText"></span>
-    <img class="header-icon" src="icons/header-right.png">
-  </div>
-</div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<div id="status" class="status-box panel-box">
-  <div id="statusBody">טוען נתונים...</div>
-</div>
+  <script>
+    const DATA_FILE = "data.geojson";
+    const TITLE_FILE = "title.txt";
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    const map = L.map("map", {
+      preferCanvas: true
+    }).setView([31.5, 34.8], 7);
 
-<script>
-(async function () {
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
 
-  const statusBody = document.getElementById("statusBody");
+    const mainLayer = L.layerGroup();
+    const otherLayer = L.layerGroup();
 
-  try {
-
-    const params = new URLSearchParams(window.location.search);
-    const badge = params.get("badge");
-
-    if (!badge) {
-      throw new Error("לא הועבר מספר Badge");
+    function safeText(value) {
+      return value == null ? "" : String(value).trim();
     }
 
-    const folder = `json/Badge_${badge}`;
+    function getProperty(feature, names) {
+      if (!feature || !feature.properties) return "";
 
-    window.PERIOD_GEOJSON_URL = `${folder}/period.geojson`;
-    window.MAP_TITLE_URL = `${folder}/map-title.json`;
-
-    // בדיקת קובץ
-    const response = await fetch(window.PERIOD_GEOJSON_URL);
-
-    if (!response.ok) {
-      throw new Error("המפה לא קיימת עבור מספר זה");
-    }
-
-    const text = await response.text();
-
-    if (!text || text.trim().length === 0) {
-      throw new Error("אין נתונים להצגה");
-    }
-
-    // override fetch
-    const originalFetch = window.fetch.bind(window);
-
-    window.fetch = function (resource, options) {
-
-      if (typeof resource === "string") {
-
-        if (resource === "json/period.geojson") {
-          return Promise.resolve(new Response(text, {
-            status: 200,
-            headers: { "Content-Type": "application/json" }
-          }));
-        }
-
-        if (resource === "map-title.json") {
-          resource = window.MAP_TITLE_URL;
+      for (const name of names) {
+        if (feature.properties[name] != null) {
+          return feature.properties[name];
         }
       }
 
-      return originalFetch(resource, options);
-    };
+      return "";
+    }
 
-    // טעינת כל הקוד הקיים (reuse מלא)
-    const scripts = [
-      "js/config.js",
-      "js/state.js",
-      "js/dom.js",
-      "js/title.js",
-      "js/helpers.js",
-      "js/search.js",
-      "js/geojson.js",
-      "js/ui.js",
-      "js/main.js"
-    ];
+    function getFeatureName(feature) {
+      return safeText(getProperty(feature, ["name", "Name", "NAME"]));
+    }
 
-    for (const src of scripts) {
-      await new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = src;
-        script.onload = resolve;
-        script.onerror = () => reject(src);
-        document.body.appendChild(script);
+    function getFeatureDescription(feature) {
+      return safeText(getProperty(feature, [
+        "description",
+        "Description",
+        "DESCRIPTION",
+        "desc",
+        "Desc"
+      ]));
+    }
+
+    function extractBadgeFromTitle(title) {
+      const m = String(title).match(/#\s*(\d+)/);
+      return m ? m[1] : "";
+    }
+
+    function extractBadgeFromGeoJson(geojson) {
+      if (!geojson || !Array.isArray(geojson.features)) return "";
+
+      const counts = {};
+
+      geojson.features.forEach(feature => {
+        const name = getFeatureName(feature);
+        const m = name.match(/^#\s*(\d+)$/);
+        if (m) {
+          counts[m[1]] = (counts[m[1]] || 0) + 1;
+        }
+      });
+
+      let bestBadge = "";
+      let bestCount = 0;
+
+      Object.keys(counts).forEach(badge => {
+        if (counts[badge] > bestCount) {
+          bestBadge = badge;
+          bestCount = counts[badge];
+        }
+      });
+
+      return bestBadge;
+    }
+
+    function setMapTitle(title) {
+      const cleanTitle = safeText(title) || "מפת יעל";
+
+      document.title = cleanTitle;
+
+      const titleBox = document.getElementById("titleBox");
+      if (titleBox) {
+        titleBox.textContent = cleanTitle;
+      }
+    }
+
+    function createMarker(feature, latlng, isMain) {
+      return L.marker(latlng, {
+        icon: L.divIcon({
+          className: "",
+          html: `<div class="${isMain ? "badge-main-marker" : "badge-other-marker"}"></div>`,
+          iconSize: isMain ? [18, 18] : [16, 16],
+          iconAnchor: isMain ? [9, 9] : [8, 8]
+        })
       });
     }
 
-  } catch (err) {
+    function bindPopup(layer, feature) {
+      const description = getFeatureDescription(feature);
+      const name = getFeatureName(feature);
 
-    console.error(err);
-
-    if (statusBody) {
-      statusBody.textContent = "שגיאה: " + err.message;
+      if (description) {
+        layer.bindPopup(description, {
+          maxWidth: 520
+        });
+      } else if (name) {
+        layer.bindPopup(name);
+      }
     }
-  }
 
-})();
-</script>
+    async function loadTitle() {
+      try {
+        const response = await fetch(TITLE_FILE, { cache: "no-store" });
+        if (!response.ok) throw new Error("title not found");
+        return (await response.text()).trim();
+      } catch {
+        return "";
+      }
+    }
 
+    async function loadMap() {
+      const titleFromFile = await loadTitle();
+
+      const response = await fetch(DATA_FILE, { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error("לא נמצא קובץ data.geojson");
+      }
+
+      const geojson = await response.json();
+
+      let badgeNo = extractBadgeFromTitle(titleFromFile);
+      if (!badgeNo) {
+        badgeNo = extractBadgeFromGeoJson(geojson);
+      }
+
+      const mainName = "#" + badgeNo;
+
+      const finalTitle = titleFromFile || (
+        badgeNo
+          ? `מפה אישית עבור יעל # ${badgeNo}`
+          : "מפה אישית עבור יעל"
+      );
+
+      setMapTitle(finalTitle);
+
+      const boundsLayers = [];
+
+      geojson.features.forEach(feature => {
+        const pointName = getFeatureName(feature);
+        const isMain = badgeNo && pointName === mainName;
+
+        const singleFeatureLayer = L.geoJSON(feature, {
+          pointToLayer: function (feature, latlng) {
+            return createMarker(feature, latlng, isMain);
+          },
+          onEachFeature: function (feature, layer) {
+            bindPopup(layer, feature);
+          }
+        });
+
+        if (isMain) {
+          singleFeatureLayer.addTo(mainLayer);
+        } else {
+          singleFeatureLayer.addTo(otherLayer);
+        }
+
+        boundsLayers.push(singleFeatureLayer);
+      });
+
+      mainLayer.addTo(map);
+      otherLayer.addTo(map);
+
+      const overlays = {};
+
+      if (badgeNo) {
+        overlays[`יעל #${badgeNo}`] = mainLayer;
+      } else {
+        overlays["יעל ראשי"] = mainLayer;
+      }
+
+      overlays["נלווים / יעלים אחרים"] = otherLayer;
+
+      L.control.layers(null, overlays, {
+        collapsed: false
+      }).addTo(map);
+
+      const allLayers = L.featureGroup(boundsLayers);
+      if (boundsLayers.length > 0) {
+        map.fitBounds(allLayers.getBounds(), {
+          padding: [30, 30],
+          maxZoom: 14
+        });
+      }
+    }
+
+    loadMap().catch(err => {
+      console.error(err);
+      setMapTitle("שגיאה בטעינת המפה");
+
+      const titleBox = document.getElementById("titleBox");
+      if (titleBox) {
+        titleBox.textContent = "שגיאה בטעינת המפה: " + err.message;
+      }
+    });
+  </script>
 </body>
 </html>
