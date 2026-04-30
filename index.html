@@ -5,231 +5,191 @@
   <title>מפת יעל</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
+  <link rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
   <style>
     html, body, #map {
       height: 100%;
       margin: 0;
-      font-family: Arial, sans-serif;
+      font-family: Arial;
     }
 
+    /* ===== כותרת ===== */
     #titleBox {
       position: absolute;
       top: 10px;
-      right: 10px;
+      left: 50%;
+      transform: translateX(-50%);
       z-index: 1000;
       background: white;
-      padding: 8px 12px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      padding: 8px 16px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
       font-size: 18px;
       font-weight: bold;
-      max-width: calc(100vw - 40px);
+      text-align: center;
     }
 
+    /* ===== Popup ===== */
     .leaflet-popup-content {
       direction: rtl;
       text-align: right;
-      font-family: Arial, sans-serif;
+      font-family: Arial;
     }
 
     .leaflet-popup-content img {
       max-width: 100%;
       height: auto;
-    }
-
-    .badge-main-marker {
-      background: #1976d2;
-      border: 2px solid white;
-      border-radius: 50%;
-      width: 14px;
-      height: 14px;
-      box-shadow: 0 0 4px rgba(0,0,0,0.5);
-    }
-
-    .badge-other-marker {
-      background: #f57c00;
-      border: 2px solid white;
-      border-radius: 50%;
-      width: 12px;
-      height: 12px;
-      box-shadow: 0 0 4px rgba(0,0,0,0.5);
+      border-radius: 6px;
     }
   </style>
 </head>
 
 <body>
-  <div id="titleBox">טוען מפה...</div>
-  <div id="map"></div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<div id="titleBox">טוען...</div>
+<div id="map"></div>
 
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const badgeNo = params.get("badge");
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    if (!badgeNo) {
-      throw new Error("לא הוגדר badge בכתובת");
-    }
+<script>
 
-    const DATA_FILE = `json/Badge_${badgeNo}/data.geojson`;
-    const TITLE_FILE = `json/Badge_${badgeNo}/title.txt`;
-    const MAIN_BADGE_NAME = `#${badgeNo}`;
+const params = new URLSearchParams(window.location.search);
+const badgeNo = params.get("badge");
 
-    const map = L.map("map", {
-      preferCanvas: true
-    }).setView([31.5, 34.8], 7);
+if (!badgeNo) {
+  throw new Error("לא הוגדר badge");
+}
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "&copy; OpenStreetMap contributors"
-    }).addTo(map);
+const DATA_FILE = `json/Badge_${badgeNo}/data.geojson`;
+const TITLE_FILE = `json/Badge_${badgeNo}/title.txt`;
+const MAIN_NAME = `#${badgeNo}`;
 
-    const mainBadgeLayer = L.layerGroup();
-    const relatedBadgesLayer = L.layerGroup();
+/* ===== מפה ===== */
 
-    function safeText(value) {
-      return value == null ? "" : String(value).trim();
-    }
+const map = L.map("map").setView([31.5,34.8],7);
 
-    function getProperty(feature, names) {
-      if (!feature || !feature.properties) return "";
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution:"&copy; OpenStreetMap"
+}).addTo(map);
 
-      for (const name of names) {
-        if (feature.properties[name] != null) {
-          return feature.properties[name];
+/* ===== שכבות ===== */
+
+const mainLayer = L.layerGroup();
+const otherLayer = L.layerGroup();
+
+/* ===== פונקציות ===== */
+
+function getName(f){
+  return (f.properties?.name || "").trim();
+}
+
+function getDesc(f){
+  return f.properties?.description || "";
+}
+
+/* === תיקון פייסבוק + תמונות === */
+function fixHtml(html){
+
+  // פייסבוק -> רק "פייסבוק"
+  html = html.replace(
+    /<a[^>]*href="([^"]*facebook[^"]*)"[^>]*>.*?<\/a>/gi,
+    `<a href="$1" target="_blank">פייסבוק</a>`
+  );
+
+  // תיקון Google Drive
+  html = html.replace(
+    /https:\/\/drive\.google\.com\/uc\?export=view&amp;id=/g,
+    "https://drive.google.com/uc?export=view&id="
+  );
+
+  return html;
+}
+
+/* ===== טעינת כותרת ===== */
+
+fetch(TITLE_FILE)
+.then(r => r.text())
+.then(t => {
+  document.title = t;
+  document.getElementById("titleBox").textContent = t;
+});
+
+/* ===== טעינת נתונים ===== */
+
+fetch(DATA_FILE)
+.then(r => {
+  if (!r.ok) throw new Error("אין data.geojson");
+  return r.json();
+})
+.then(data => {
+
+  const all = [];
+
+  data.features.forEach(f => {
+
+    const name = getName(f);
+    const isMain = name === MAIN_NAME;
+
+    const layer = L.geoJSON(f, {
+
+      /* === אייקונים === */
+      pointToLayer: function(feature, latlng){
+
+        if (isMain){
+          return L.marker(latlng); // יעל ראשי רגיל
+        }
+
+        return L.circleMarker(latlng,{
+          radius:6,
+          color:"#ff6600",
+          fillColor:"#ff6600",
+          fillOpacity:1
+        });
+      },
+
+      onEachFeature: function(feature, layer){
+
+        let html = getDesc(feature);
+
+        if (html){
+          html = fixHtml(html);
+          layer.bindPopup(html, {maxWidth:500});
         }
       }
 
-      return "";
-    }
-
-    function getFeatureName(feature) {
-      return safeText(getProperty(feature, ["name", "Name", "NAME"]));
-    }
-
-    function getFeatureDescription(feature) {
-      return safeText(getProperty(feature, [
-        "description",
-        "Description",
-        "DESCRIPTION",
-        "desc",
-        "Desc"
-      ]));
-    }
-
-    function setMapTitle(title) {
-      const cleanTitle = safeText(title) || `מפה אישית עבור יעל # ${badgeNo}`;
-
-      document.title = cleanTitle;
-
-      const titleBox = document.getElementById("titleBox");
-      if (titleBox) {
-        titleBox.textContent = cleanTitle;
-      }
-    }
-
-    function createMarker(feature, latlng, isMain) {
-      return L.marker(latlng, {
-        icon: L.divIcon({
-          className: "",
-          html: `<div class="${isMain ? "badge-main-marker" : "badge-other-marker"}"></div>`,
-          iconSize: isMain ? [18, 18] : [16, 16],
-          iconAnchor: isMain ? [9, 9] : [8, 8]
-        })
-      });
-    }
-
-    function bindPopup(layer, feature) {
-      const description = getFeatureDescription(feature);
-      const name = getFeatureName(feature);
-
-      if (description) {
-        layer.bindPopup(description, {
-          maxWidth: 520
-        });
-      } else if (name) {
-        layer.bindPopup(name);
-      }
-    }
-
-    async function loadTitle() {
-      try {
-        const response = await fetch(TITLE_FILE, { cache: "no-store" });
-        if (!response.ok) throw new Error("title not found");
-        return (await response.text()).trim();
-      } catch {
-        return `מפה אישית עבור יעל # ${badgeNo}`;
-      }
-    }
-
-    async function loadMap() {
-      const title = await loadTitle();
-      setMapTitle(title);
-
-      const response = await fetch(DATA_FILE, { cache: "no-store" });
-
-      if (!response.ok) {
-        throw new Error("לא נמצא קובץ data.geojson");
-      }
-
-      const geojson = await response.json();
-      const allFeatureLayers = [];
-
-      geojson.features.forEach(feature => {
-        const pointName = getFeatureName(feature);
-        const isMain = pointName === MAIN_BADGE_NAME;
-
-        const featureLayer = L.geoJSON(feature, {
-          pointToLayer: function (feature, latlng) {
-            return createMarker(feature, latlng, isMain);
-          },
-          onEachFeature: function (feature, layer) {
-            bindPopup(layer, feature);
-          }
-        });
-
-        if (isMain) {
-          featureLayer.addTo(mainBadgeLayer);
-        } else {
-          featureLayer.addTo(relatedBadgesLayer);
-        }
-
-        allFeatureLayers.push(featureLayer);
-      });
-
-      mainBadgeLayer.addTo(map);
-      relatedBadgesLayer.addTo(map);
-
-      L.control.layers(null, {
-        [`יעל #${badgeNo}`]: mainBadgeLayer,
-        "נלווים / יעלים אחרים": relatedBadgesLayer
-      }, {
-        collapsed: false
-      }).addTo(map);
-
-      if (allFeatureLayers.length > 0) {
-        const allLayersGroup = L.featureGroup(allFeatureLayers);
-
-        map.fitBounds(allLayersGroup.getBounds(), {
-          padding: [30, 30],
-          maxZoom: 14
-        });
-      }
-    }
-
-    loadMap().catch(err => {
-      console.error(err);
-      setMapTitle("שגיאה בטעינת המפה");
-
-      const titleBox = document.getElementById("titleBox");
-      if (titleBox) {
-        titleBox.textContent = "שגיאה בטעינת המפה: " + err.message;
-      }
     });
-  </script>
+
+    if (isMain){
+      layer.addTo(mainLayer);
+    } else {
+      layer.addTo(otherLayer);
+    }
+
+    all.push(layer);
+  });
+
+  mainLayer.addTo(map);
+  otherLayer.addTo(map);
+
+  L.control.layers(null,{
+    [`יעל #${badgeNo}`]: mainLayer,
+    "נלווים": otherLayer
+  }).addTo(map);
+
+  if (all.length){
+    const g = L.featureGroup(all);
+    map.fitBounds(g.getBounds(),{padding:[30,30]});
+  }
+
+})
+.catch(err=>{
+  console.error(err);
+  document.getElementById("titleBox").textContent =
+    "שגיאה: " + err.message;
+});
+
+</script>
 </body>
 </html>
