@@ -11,7 +11,7 @@
 html, body, #map {
   height: 100%;
   margin: 0;
-  font-family: Arial, sans-serif;
+  font-family: Arial;
 }
 
 #titleBox {
@@ -21,42 +21,61 @@ html, body, #map {
   transform: translateX(-50%);
   z-index: 1000;
   background: white;
-  padding: 8px 18px;
+  padding: 8px 20px;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0,0,0,.25);
   font-size: 18px;
   font-weight: bold;
   text-align: center;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#titleBox img {
+  height: 20px;
+}
+
+.leaflet-popup-content-wrapper {
+  max-width: 620px;
 }
 
 .leaflet-popup-content {
   direction: rtl;
   text-align: right;
-  font-family: Arial, sans-serif;
+  font-family: Arial;
+  width: 560px !important;
+  max-width: 80vw;
+  font-size: 14px;
 }
 
 .leaflet-popup-content img {
-  max-width: 450px;
+  max-width: 540px;
   width: 100%;
   height: auto;
-  display: block;
   margin-top: 8px;
+  display: block;
 }
 
-.other-badge-icon {
-  background: orange;
-  border: 2px solid white;
-  border-radius: 50%;
+.other-icon {
   width: 14px;
   height: 14px;
+  background: orange;
+  border-radius: 50%;
+  border: 2px solid white;
   box-shadow: 0 0 4px #333;
 }
 </style>
 </head>
 
 <body>
-<div id="titleBox">טוען מפה...</div>
+
+<div id="titleBox">
+  <img src="icons/header-right.png">
+  <span id="titleText">טוען...</span>
+  <img src="icons/header-right.png">
+</div>
+
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -66,151 +85,135 @@ const params = new URLSearchParams(window.location.search);
 const badgeNo = params.get("badge");
 
 if (!badgeNo) {
-  document.getElementById("titleBox").textContent = "חסר פרמטר badge";
-  throw new Error("Missing badge parameter");
+  document.getElementById("titleText").textContent = "חסר badge";
+  throw new Error("Missing badge");
 }
 
 const DATA_FILE = `json/Badge_${badgeNo}/data.geojson`;
 const TITLE_FILE = `json/Badge_${badgeNo}/title.txt`;
-const MAIN_BADGE_NAME = `#${badgeNo}`;
+const MAIN_NAME = `#${badgeNo}`;
 
-const map = L.map("map", { preferCanvas: true }).setView([31.5, 34.8], 7);
+const map = L.map("map").setView([31.5,34.8],7);
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  attribution: "&copy; OpenStreetMap contributors"
+  attribution:"&copy; OpenStreetMap"
 }).addTo(map);
+
+const mainIcon = L.icon({
+  iconUrl: "icons/marker.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34]
+});
+
+const otherIcon = L.divIcon({
+  html: "<div class='other-icon'></div>",
+  iconSize: [16,16],
+  iconAnchor: [8,8]
+});
 
 const mainLayer = L.layerGroup();
 const otherLayer = L.layerGroup();
 
-const otherIcon = L.divIcon({
-  className: "",
-  html: "<div class='other-badge-icon'></div>",
-  iconSize: [18, 18],
-  iconAnchor: [9, 9]
-});
-
-function prop(feature, names) {
-  if (!feature || !feature.properties) return "";
-  for (const n of names) {
-    if (feature.properties[n] !== undefined && feature.properties[n] !== null) {
-      return String(feature.properties[n]);
+function prop(f,names){
+  for (let n of names){
+    if (f.properties?.[n] !== undefined && f.properties?.[n] !== null) {
+      return f.properties[n];
     }
   }
   return "";
 }
 
-function getName(feature) {
-  return prop(feature, ["name", "Name", "NAME"]).trim();
+function getName(f){
+  return String(prop(f,["name","Name","NAME"])).trim();
 }
 
-function getDescription(feature) {
-  return prop(feature, [
-    "description",
-    "Description",
-    "DESCRIPTION",
-    "desc",
-    "Desc"
-  ]);
+function getDesc(f){
+  return prop(f,["description","Description","DESCRIPTION"]);
 }
 
-function fixPopupHtml(html) {
+function fixHtml(html){
   if (!html) return "";
 
   html = String(html);
 
   html = html.replace(
-    /<a\s+([^>]*href=['"][^'"]*facebook\.com[^'"]*['"][^>]*)>.*?<\/a>/gis,
-    "<a $1 target='_blank'>פייסבוק</a>"
+    /<a[^>]*href=["']([^"']*facebook[^"']*)["'][^>]*>.*?<\/a>/gi,
+    `<a href="$1" target="_blank">פייסבוק</a>`
   );
 
-  html = html.replaceAll("&amp;", "&");
-
-  html = html.replace(
-    /https:\/\/drive\.google\.com\/uc\?export=view&id=([^'" >]+)/g,
-    "https://drive.google.com/thumbnail?id=$1&sz=w800"
-  );
+  html = html.replaceAll("&amp;","&");
 
   return html;
 }
 
-async function loadTitle() {
-  try {
-    const r = await fetch(TITLE_FILE, { cache: "no-store" });
-    if (!r.ok) throw new Error();
-    const title = (await r.text()).trim();
-    document.title = title;
-    document.getElementById("titleBox").textContent = `🦌 ${title} 🦌`;
-  } catch {
-    const title = `מפה אישית עבור יעל # ${badgeNo}`;
-    document.title = title;
-    document.getElementById("titleBox").textContent = `🦌 ${title} 🦌`;
-  }
-}
+fetch(TITLE_FILE)
+.then(r=>r.text())
+.then(t=>{
+  document.title = t.trim();
+  document.getElementById("titleText").textContent = t.trim();
+});
 
-async function loadData() {
-  const r = await fetch(DATA_FILE, { cache: "no-store" });
-  if (!r.ok) throw new Error("לא נמצא data.geojson");
+fetch(DATA_FILE)
+.then(r=>{
+  if (!r.ok) throw new Error("אין data.geojson");
+  return r.json();
+})
+.then(data=>{
+  const all = [];
 
-  const data = await r.json();
-  const allLayers = [];
+  data.features.forEach(f=>{
+    const name = getName(f);
+    const isMain = name === MAIN_NAME;
 
-  data.features.forEach(feature => {
-    const name = getName(feature);
-    const isMain = name === MAIN_BADGE_NAME;
-
-    const layer = L.geoJSON(feature, {
-      pointToLayer: function(feature, latlng) {
-        if (isMain) {
-          return L.marker(latlng);
-        }
-        return L.marker(latlng, { icon: otherIcon });
+    const layer = L.geoJSON(f,{
+      pointToLayer:(feature,latlng)=>{
+        return isMain
+          ? L.marker(latlng,{icon:mainIcon})
+          : L.marker(latlng,{icon:otherIcon});
       },
 
-      onEachFeature: function(feature, layer) {
-        const desc = fixPopupHtml(getDescription(feature));
-        if (desc) {
-          layer.bindPopup(desc, { maxWidth: 520 });
-        } else {
-          layer.bindPopup(getName(feature));
+      onEachFeature:(feature,layer)=>{
+        let html = fixHtml(getDesc(feature));
+        if (html){
+          layer.bindPopup(html,{
+            maxWidth: 620,
+            minWidth: 560
+          });
         }
       }
     });
 
-    if (isMain) {
+    if (isMain){
       layer.addTo(mainLayer);
     } else {
       layer.addTo(otherLayer);
     }
 
-    allLayers.push(layer);
+    all.push(layer);
   });
 
   mainLayer.addTo(map);
   otherLayer.addTo(map);
 
-  L.control.layers(null, {
+  L.control.layers(null,{
     [`יעל #${badgeNo}`]: mainLayer,
-    "נלווים / יעלים אחרים": otherLayer
-  }, {
-    collapsed: false
+    "נלווים": otherLayer
   }).addTo(map);
 
-  if (allLayers.length) {
-    const group = L.featureGroup(allLayers);
-    map.fitBounds(group.getBounds(), {
-      padding: [30, 30],
-      maxZoom: 14
+  if (all.length){
+    const g = L.featureGroup(all);
+    map.fitBounds(g.getBounds(),{
+      padding:[30,30],
+      maxZoom:14
     });
   }
-}
-
-loadTitle()
-  .then(loadData)
-  .catch(err => {
-    console.error(err);
-    document.getElementById("titleBox").textContent = "שגיאה: " + err.message;
-  });
+})
+.catch(err=>{
+  console.error(err);
+  document.getElementById("titleText").textContent =
+    "שגיאה: " + err.message;
+});
 </script>
 </body>
 </html>
