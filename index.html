@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>מפת יעל</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+
+<body>
+<div id="map"></div>
+
+<div class="map-header">
+  <div class="map-header-box">
+    <img class="header-icon" src="icons/header-right.png">
+    <span id="mapTitleText"></span>
+    <img class="header-icon" src="icons/header-right.png">
+  </div>
+</div>
+
+<div id="status" class="status-box panel-box">
+  <div id="statusBody">טוען נתונים...</div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+(async function () {
+
+  const statusBody = document.getElementById("statusBody");
+
+  try {
+
+    const params = new URLSearchParams(window.location.search);
+    const badge = params.get("badge");
+
+    if (!badge) {
+      throw new Error("לא הועבר מספר Badge");
+    }
+
+    const folder = `json/Badge_${badge}`;
+
+    window.PERIOD_GEOJSON_URL = `${folder}/period.geojson`;
+    window.MAP_TITLE_URL = `${folder}/map-title.json`;
+
+    // בדיקת קובץ
+    const response = await fetch(window.PERIOD_GEOJSON_URL);
+
+    if (!response.ok) {
+      throw new Error("המפה לא קיימת עבור מספר זה");
+    }
+
+    const text = await response.text();
+
+    if (!text || text.trim().length === 0) {
+      throw new Error("אין נתונים להצגה");
+    }
+
+    // override fetch
+    const originalFetch = window.fetch.bind(window);
+
+    window.fetch = function (resource, options) {
+
+      if (typeof resource === "string") {
+
+        if (resource === "json/period.geojson") {
+          return Promise.resolve(new Response(text, {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          }));
+        }
+
+        if (resource === "map-title.json") {
+          resource = window.MAP_TITLE_URL;
+        }
+      }
+
+      return originalFetch(resource, options);
+    };
+
+    // טעינת כל הקוד הקיים (reuse מלא)
+    const scripts = [
+      "js/config.js",
+      "js/state.js",
+      "js/dom.js",
+      "js/title.js",
+      "js/helpers.js",
+      "js/search.js",
+      "js/geojson.js",
+      "js/ui.js",
+      "js/main.js"
+    ];
+
+    for (const src of scripts) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = () => reject(src);
+        document.body.appendChild(script);
+      });
+    }
+
+  } catch (err) {
+
+    console.error(err);
+
+    if (statusBody) {
+      statusBody.textContent = "שגיאה: " + err.message;
+    }
+  }
+
+})();
+</script>
+
+</body>
+</html>
