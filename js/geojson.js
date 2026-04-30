@@ -1,4 +1,4 @@
-async function loadGeoJsonLayer(filePath, layerLabel) {
+async function loadGeoJsonLayer(filePath, layerLabel, options = {}) {
   const response = await fetch(filePath);
   if (!response.ok) throw new Error(`Failed to load ${filePath} (HTTP ${response.status})`);
   const data = await response.json();
@@ -14,10 +14,15 @@ async function loadGeoJsonLayer(filePath, layerLabel) {
 
     const props = feature.properties || {};
     const name = getFeatureName(props);
+
+    if (options.badgeMode === 'main' && name !== MAIN_BADGE_NAME) return;
+    if (options.badgeMode === 'others' && name === MAIN_BADGE_NAME) return;
+
     const descriptionHtml = normalizeDescriptionHtml(getFeatureDescription(props));
     const descriptionText = stripHtml(descriptionHtml);
+    const markerClass = options.badgeMode === 'others' ? 'other-badge-marker' : '';
 
-    const marker = L.marker(latlng, { icon: createMarkerIcon(name) });
+    const marker = L.marker(latlng, { icon: createMarkerIcon(name, markerClass) });
     marker.bindPopup(
       `<div class="popup-wrap"><div class="popup-title">${escapeHtml(name)}</div><div class="popup-body">${descriptionHtml}</div></div>`,
       { maxWidth: 340, minWidth: 220 }
@@ -82,7 +87,9 @@ function buildLayerList() {
 
 async function initMap() {
   try {
-    const results = await Promise.allSettled(GEOJSON_FILES.map(item => loadGeoJsonLayer(item.file, item.label)));
+    if (!BADGE_NO) throw new Error('חסר פרמטר badge בכתובת. לדוגמה: ?badge=1497');
+
+    const results = await Promise.allSettled(GEOJSON_FILES.map(item => loadGeoJsonLayer(item.file, item.label, item)));
     let statusLines = [];
 
     results.forEach((result, index) => {
@@ -102,6 +109,8 @@ async function initMap() {
     });
 
     buildLayerList();
+    layersPanel.classList.add('open');
+
     if (allBounds.length > 0) map.fitBounds(allBounds, { padding: [20, 20] });
     setStatus(`נטענו ${loadedLayers} שכבות\nסה"כ ${totalMarkers} נקודות\n\n${statusLines.join('\n')}`);
   } catch (err) {

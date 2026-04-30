@@ -1,8 +1,8 @@
 function setStatus(text) { statusBodyEl.textContent = text; }
 function closeAllPanels() {
   searchPanel.classList.remove('open');
-  layersPanel.classList.remove('open');
   statusPanel.classList.remove('open');
+  if (!document.body.classList.contains('badge-map')) layersPanel.classList.remove('open');
 }
 function escapeHtml(text) {
   const div = document.createElement('div');
@@ -63,10 +63,11 @@ function stripHtml(html) {
   div.innerHTML = html || '';
   return (div.textContent || div.innerText || '').trim();
 }
-function createMarkerIcon(labelText) {
+function createMarkerIcon(labelText, extraClass = '') {
+  const cls = extraClass ? `custom-marker ${extraClass}` : 'custom-marker';
   return L.divIcon({
     className: '',
-    html: `<div class="custom-marker"><img src="${MARKER_ICON_URL}" alt=""><div class="custom-marker-label">${escapeHtml(labelText || '')}</div></div>`,
+    html: `<div class="${cls}"><img src="${MARKER_ICON_URL}" alt=""><div class="custom-marker-label">${escapeHtml(labelText || '')}</div></div>`,
     iconSize: [70, 21],
     iconAnchor: [9, 20],
     popupAnchor: [0, -18]

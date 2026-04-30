@@ -1,11 +1,23 @@
-const PAGE_KEY = 'index_period_geojson';
-const DEFAULT_MAP_TITLE = 'מפת יעלים תקופתית - GeoJSON';
+const PAGE_KEY = 'index_badge_geojson';
 const DEFAULT_ZOOM_ON_SEARCH = 15;
 const MAX_SEARCH_RESULTS = 50;
 const MARKER_ICON_URL = 'icons/marker.png';
-const GEOJSON_FILES = [
-  { label: 'רשימת יעלים ממויינת', file: 'json/period.geojson', visible: true }
-];
+
+const urlParams = new URLSearchParams(window.location.search);
+const BADGE_NO = (urlParams.get('badge') || '').trim();
+const MAIN_BADGE_NAME = BADGE_NO ? `#${BADGE_NO}` : '';
+const DEFAULT_MAP_TITLE = BADGE_NO ? `מפה אישית עבור יעל # ${BADGE_NO}` : 'מפה אישית עבור יעל';
+
+if (!BADGE_NO) {
+  console.error('Missing badge parameter. Example: ?badge=1497');
+}
+
+document.body.classList.add('badge-map');
+
+const GEOJSON_FILES = BADGE_NO ? [
+  { label: `יעל #${BADGE_NO}`, file: `json/Badge_${BADGE_NO}/data.geojson`, visible: true, badgeMode: 'main' },
+  { label: 'נלווים', file: `json/Badge_${BADGE_NO}/data.geojson`, visible: true, badgeMode: 'others' }
+] : [];
 
 const PREDEFINED_AREA_BOUNDS = {
   'אסיה': [[-10, 25], [82, 180]],
