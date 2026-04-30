@@ -207,3 +207,23 @@ html, body { height: 100%; margin: 0; font-family: Arial, sans-serif; }
 #fullMapBtn:hover {
   background: #f2f2f2;
 }
+
+/* Badge_Map only */
+body.badge-map .layers-list-panel {
+  display: block;
+  top: 70px;
+  left: 10px;
+  right: auto;
+}
+
+body.badge-map #layersToggle {
+  display: none;
+}
+
+body.badge-map .other-badge-marker .custom-marker-label {
+  color: #b45a00;
+}
+
+body.badge-map .other-badge-marker img {
+  filter: saturate(0.8);
+}
