@@ -1,5 +1,5 @@
 const params = new URLSearchParams(window.location.search);
-const badge = params.get("badge");
+const badge = params.get("badge") || params.get("Badge");
 const MARKER_ICON_URL = "icons/marker.png";
 
 if (!badge) {
