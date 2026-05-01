@@ -14,16 +14,17 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 }).addTo(map);
 
 let mapTitle = `מפה אישית עבור יעל # ${badge}`;
+let currentTotalCount = null;
 
-function updateHeaderTitle(totalCount = null) {
+function updateHeaderTitle() {
   const titleEl = document.getElementById("mapTitleText");
   if (!titleEl) return;
 
-  if (totalCount === null) {
+  if (currentTotalCount === null) {
     titleEl.textContent = mapTitle;
   } else {
     titleEl.innerHTML =
-      `${escapeHtml(mapTitle)}<br><span style="font-size:14px;font-weight:normal;">${totalCount} יעלים</span>`;
+      `${escapeHtml(mapTitle)}<br><span style="font-size:14px;font-weight:normal;">${currentTotalCount} יעלים</span>`;
   }
 }
 
@@ -207,7 +208,8 @@ fetch(`json/Badge_${badge}/data.geojson`, { cache: "no-store" })
     const otherCount = otherLayer.getLayers().length;
     const totalCount = mainCount + otherCount;
 
-    updateHeaderTitle(totalCount);
+    currentTotalCount = totalCount;
+    updateHeaderTitle();
 
     mainLayer.addTo(map);
 
