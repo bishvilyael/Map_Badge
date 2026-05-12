@@ -128,8 +128,8 @@ function createMarkerIcon(labelText, isMain) {
         <div class="custom-marker-label ${isMain ? "" : "other"}">${escapeHtml(labelText || "")}</div>
       </div>
     `,
-    iconSize: [120, 36],
-    iconAnchor: [12, 32],
-    popupAnchor: [0, -26]
+    iconSize: [70, 21],
+    iconAnchor: [70, 21],
+    popupAnchor: [0, -21]
   });
 }
