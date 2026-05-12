@@ -41,30 +41,6 @@ html, body, #map {
   object-fit: contain;
 }
 
-.custom-marker {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  white-space: nowrap;
-  direction: ltr;
-}
-
-.custom-marker img {
-  width: 22px;
-  height: 32px;
-  object-fit: contain;
-  display: block;
-  flex: 0 0 auto;
-}
-
-.custom-marker-label {
-  font-size: 13px;
-  font-weight: bold;
-  color: #083c68;
-  text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
-  direction: ltr;
-  line-height: 1;
-}
 
 .custom-marker-label.other {
   color: #c46a00;
