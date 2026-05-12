@@ -1,29 +1,6 @@
-
-
-
-
-  const lowerMap = {};
-  Object.keys(props).forEach(k => {
-    lowerMap[k.toLowerCase()] = k;
-  });
-
-  for (const key of candidates) {
-    const actual = lowerMap[String(key).toLowerCase()];
-    if (actual && props[actual] != null) return props[actual];
-  }
-
-  return "";
-}
-
-
-
 function normalizeBadgeName(name) {
   return String(name || "").replace(/\s+/g, "");
 }
-
-
-
-
 
 function normalizeDescriptionHtml(html) {
   const temp = document.createElement("div");
@@ -62,16 +39,6 @@ function normalizeDescriptionHtml(html) {
   });
 
   return temp.innerHTML;
-}
-
-
-
-  const lon = parseFloat(g.coordinates[0]);
-  const lat = parseFloat(g.coordinates[1]);
-
-  if (Number.isNaN(lat) || Number.isNaN(lon)) return null;
-
-  return L.latLng(lat, lon);
 }
 
 function createMarkerIcon(labelText, isMain) {
