@@ -59,12 +59,6 @@ async function loadBadgeGeoJson() {
       [`נלווים (${otherCount})`]: otherLayer
     }, { collapsed: false }).addTo(map);
   }
-
-  if (allBounds.length > 0) {
-    map.fitBounds(allBounds, {
-      padding: [20, 20],
-      maxZoom: DEFAULT_BADGE_MAX_FIT_ZOOM
-    });
-  }
+  fitIsraelView();
 }
-fitIsraelView();
+
