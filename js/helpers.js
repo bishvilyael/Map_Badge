@@ -129,7 +129,7 @@ function createMarkerIcon(labelText, isMain) {
       </div>
     `,
     iconSize: [70, 21],
-    iconAnchor: [35, 10],
-    popupAnchor: [0, 10]
+    iconAnchor: [11, 11],
+    popupAnchor: [0, -11]
   });
 }
