@@ -1,0 +1,10 @@
+﻿Started: 2026-05-12 12:01:55
+Map type: Badge
+Source  : G:\My Drive\Sfirat_Yeelim\Exports\KML\Badge_Export\Badge_7760.kml
+Output  : G:\My Drive\Sfirat_Yeelim\Exports\RIPOS\Badge_Map\json\Badge_7760
+Count   : 1
+OK: Badge_7760.kml -> data.geojson
+Title: מפה אישית עבור יעל # 7760 עם נלווים
+Finished: 2026-05-12 12:01:55
+Success : 1
+Failed  : 0
