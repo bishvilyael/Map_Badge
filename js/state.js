@@ -1,10 +1,26 @@
 const params = new URLSearchParams(window.location.search);
-const badge = params.get("badge") || params.get("Badge");
 
-if (!badge) {
-  document.getElementById("mapTitleText").textContent = "חסר badge";
-  throw new Error("Missing badge");
+const mapKey = params.get("key") || "";
+
+if (!mapKey) {
+  document.body.innerHTML = `
+    <div style="
+      direction: rtl;
+      font-family: Arial, sans-serif;
+      font-size: 24px;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 120px;
+      color: #900;
+    ">
+      אינך מורשה/מורשית לפתוח אתר זה !!
+    </div>
+  `;
+  throw new Error("Missing key");
 }
+
+let badgeFolder = "";
+let badge = "";
 
 const map = L.map("map", {
   preferCanvas: true,
