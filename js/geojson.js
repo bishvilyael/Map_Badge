@@ -1,4 +1,4 @@
-async function loadBadgeGeoJson() {const allBounds = [];
+async function loadBadgeGeoJson() {
   const response = await fetch(`json/${badgeFolder}/data.geojson`, { cache: "no-store" });
 
   if (!response.ok) {
