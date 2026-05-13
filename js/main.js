@@ -1,12 +1,17 @@
 (async function () {
   try {
+    if (!mapKey) {
+      throw new Error(accessDeniedMessage);
+    }
+
     await loadMapKey();
 
     await loadBadgeTitle();
     await loadBadgeGeoJson();
   } catch (err) {
     console.error(err);
-	document.title = "אין הרשאה";
+
+    document.title = "אין הרשאה";
 
     document.body.innerHTML = `
       <div style="
