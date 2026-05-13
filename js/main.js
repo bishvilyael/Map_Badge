@@ -1,10 +1,24 @@
 (async function () {
   try {
+    await loadMapKey();
+
     await loadBadgeTitle();
     await loadBadgeGeoJson();
   } catch (err) {
     console.error(err);
-    document.getElementById("mapTitleText").textContent =
-      "שגיאה: " + err.message;
+
+    document.body.innerHTML = `
+      <div style="
+        direction: rtl;
+        font-family: Arial, sans-serif;
+        font-size: 24px;
+        font-weight: bold;
+        text-align: center;
+        margin-top: 120px;
+        color: #900;
+      ">
+        ${err.message}
+      </div>
+    `;
   }
 })();

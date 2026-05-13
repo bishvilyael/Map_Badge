@@ -55,3 +55,25 @@ function createMarkerIcon(labelText, isMain) {
     popupAnchor: [0, -11]
   });
 }
+async function loadMapKey() {
+  const response = await fetch("json/keys.json", { cache: "no-store" });
+
+  if (!response.ok) {
+    throw new Error("קובץ המפתחות לא נטען");
+  }
+
+  const keys = await response.json();
+
+  if (!keys || typeof keys !== "object" || Array.isArray(keys)) {
+    throw new Error("קובץ המפתחות לא תקין");
+  }
+
+  badgeFolder = keys[mapKey];
+
+  if (!badgeFolder) {
+    throw new Error("אינך מורשה/מורשית לפתוח אתר זה !!");
+  }
+
+  const match = badgeFolder.match(/^Badge_(\d+)/);
+  badge = match ? match[1] : "";
+}
