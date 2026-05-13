@@ -12,7 +12,7 @@ function updateHeaderTitle() {
 
 async function loadBadgeTitle() {
   try {
-    const response = await fetch(`json/Badge_${badge}/map-title.json`, { cache: "no-store" });
+    const response = await fetch(`json/${badgeFolder}/map-title.json`, { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const data = await response.json();

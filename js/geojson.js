@@ -1,5 +1,5 @@
 async function loadBadgeGeoJson() {
-  const response = await fetch(`json/Badge_${badge}/data.geojson`, { cache: "no-store" });
+  const response = await fetch(`json/${badgeFolder}/data.geojson`, { cache: "no-store" });
 
   if (!response.ok) {
     throw new Error("data.geojson לא נטען");

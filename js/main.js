@@ -6,6 +6,7 @@
     await loadBadgeGeoJson();
   } catch (err) {
     console.error(err);
+	document.title = "אין הרשאה";
 
     document.body.innerHTML = `
       <div style="
