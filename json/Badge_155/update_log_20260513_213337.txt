@@ -1,0 +1,10 @@
+﻿Started: 2026-05-13 21:33:37
+Map type: Badge
+Source  : G:\My Drive\Sfirat_Yeelim\Exports\KML\Badge_Export\Badge_155.kml
+Output  : G:\My Drive\Sfirat_Yeelim\Exports\RIPOS\Map_Badge\json\Badge_155
+Count   : 1
+OK: Badge_155.kml -> data.geojson
+Title: מפה אישית עבור יעל # 155 עם נלווים
+Finished: 2026-05-13 21:33:38
+Success : 1
+Failed  : 0
