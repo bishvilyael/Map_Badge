@@ -31,46 +31,46 @@ async function loadBadgeGeoJson() {
     });
 
     const shortDate = formatPopupDate(details.date);
-	const popupHtml = `
-	  <div dir="rtl" style="font-family:Arial; line-height:1.5;">
 
-		<div>
-		  <b>${escapeHtml(name)} - ${escapeHtml(details.name || "")}</b>
-		</div>
+    const popupHtml = `
+      <div dir="rtl" style="font-family:Arial; line-height:1.5;">
 
-		<div>
-		  ${escapeHtml(details.place || "")}
-		  ${details.place && shortDate ? ", " : ""}
-		  ${escapeHtml(shortDate)}
-		</div>
+        <div>
+          <b>${escapeHtml(name)} - ${escapeHtml(details.name || "")}</b>
+        </div>
 
-		<div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          ${escapeHtml(details.place || "")}
+          ${details.place && shortDate ? ", " : ""}
+          ${escapeHtml(shortDate)}
+        </div>
 
-		  <div>
-			${
-			  details.fbUrl
-				? `<a href="${escapeHtml(details.fbUrl)}" target="_blank" rel="noopener noreferrer">פוסט</a>`
-				: ""
-			}
-		  </div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
 
-		  <div>
-			${
-			  details.id
-				? `ID: ${escapeHtml(details.id)}`
-				: ""
-			}
-		  </div>
+          <div>
+            ${
+              details.fbUrl
+                ? `<a href="${escapeHtml(details.fbUrl)}" target="_blank" rel="noopener noreferrer">פוסט</a>`
+                : ""
+            }
+          </div>
 
-		</div>
+          <div>
+            ${
+              details.id
+                ? `ID: ${escapeHtml(details.id)}`
+                : ""
+            }
+          </div>
 
-		<br/>
+        </div>
 
-		${extractImageHtml(descriptionHtml)}
+        <br/>
 
-	  </div>
-	`;
-		`;	
+        ${extractImageHtml(descriptionHtml)}
+
+      </div>
+    `;
 
     marker.bindPopup(popupHtml, {
       maxWidth: 340,
