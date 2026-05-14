@@ -26,9 +26,6 @@ async function loadBadgeGeoJson() {
     const descriptionHtml = normalizeDescriptionHtml(getFeatureDescription(props));
     const details = extractPointDetailsFromDescription(descriptionHtml);
 	
-	console.log("details.place =", details.place);
-	console.log("description contains אתר =", descriptionHtml.includes("אתר"));
-	console.log(descriptionHtml);
 
     const marker = L.marker(latlng, {
       icon: createMarkerIcon(name, isMain)
@@ -43,11 +40,10 @@ async function loadBadgeGeoJson() {
           <b>${escapeHtml(name)} - ${escapeHtml(details.name || "")}</b>
         </div>
 
-        <div>
-          ${escapeHtml(details.place || "")}
-          ${details.place && shortDate ? ", " : ""}
-          ${escapeHtml(shortDate)}
-        </div>
+		<div style="display:flex; justify-content:space-between; align-items:center;">
+		  <div>${escapeHtml(details.place || "")}</div>
+		  <div>${escapeHtml(shortDate)}</div>
+		</div>
 
         <div style="display:flex; justify-content:space-between; align-items:center;">
 
