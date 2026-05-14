@@ -24,51 +24,52 @@ async function loadBadgeGeoJson() {
     const name = getFeatureName(props);
     const isMain = normalizeBadgeName(name) === `#${badge}`;
     const descriptionHtml = normalizeDescriptionHtml(getFeatureDescription(props));
+    const details = extractPointDetailsFromDescription(descriptionHtml);
 
     const marker = L.marker(latlng, {
       icon: createMarkerIcon(name, isMain)
     });
 
-	const shortDate = formatPopupDate(details.date);
+    const shortDate = formatPopupDate(details.date);
 
-	const popupHtml = `
-	  <div dir="rtl" style="font-family:Arial; line-height:1.5;">
-		<div><b>${escapeHtml(name)} ${escapeHtml(details.name || "")}</b></div>
-		<div>
-		  ${escapeHtml(details.place || "")}
-		  ${details.place && shortDate ? ", " : ""}
-		  ${escapeHtml(shortDate)}
-		</div>
-		<div>
-		  ${
-			details.fbUrl
-			  ? `<a href="${escapeHtml(details.fbUrl)}" target="_blank" rel="noopener noreferrer">פוסט</a>`
-			  : ""
-		  }
-		  ${
-			details.id
-			  ? `, ID: ${escapeHtml(details.id)}`
-			  : ""
-		  }
-		</div>
-	  </div>
-	`;
+    const popupHtml = `
+      <div dir="rtl" style="font-family:Arial; line-height:1.5;">
+        <div><b>${escapeHtml(name)} ${escapeHtml(details.name || "")}</b></div>
+        <div>
+          ${escapeHtml(details.place || "")}
+          ${details.place && shortDate ? ", " : ""}
+          ${escapeHtml(shortDate)}
+        </div>
+        <div>
+          ${
+            details.fbUrl
+              ? `<a href="${escapeHtml(details.fbUrl)}" target="_blank" rel="noopener noreferrer">פוסט</a>`
+              : ""
+          }
+          ${
+            details.id
+              ? `, ID: ${escapeHtml(details.id)}`
+              : ""
+          }
+        </div>
+      </div>
+    `;
 
-marker.bindPopup(popupHtml, {
-  maxWidth: 340,
-  minWidth: 220
-});
-	const details = extractPointDetailsFromDescription(descriptionHtml);
+    marker.bindPopup(popupHtml, {
+      maxWidth: 340,
+      minWidth: 220
+    });
 
-	badgePointRows.push({
-	  date: details.date,
-	  badgeNo: name,
-	  name: details.name,
-	  site: details.place,
-	  fbUrl: details.fbUrl,
-	  latlng: latlng,
-	  marker: marker
-	});
+    badgePointRows.push({
+      date: details.date,
+      badgeNo: name,
+      name: details.name,
+      site: details.place,
+      fbUrl: details.fbUrl,
+      latlng: latlng,
+      marker: marker
+    });
+
     if (isMain) {
       marker.addTo(mainLayer);
     } else {
@@ -95,16 +96,7 @@ marker.bindPopup(popupHtml, {
       [`נלווים (${otherCount})`]: otherLayer
     }, { collapsed: false }).addTo(map);
   }
+
   renderPlacesTable();
   fitIsraelView();
 }
-function formatPopupDate(dateText) {
-  if (!dateText) return "";
-
-  const m = String(dateText).match(/^(\d{2})-(\d{2})-(\d{4})$/);
-
-  if (!m) return dateText;
-
-  return `${parseInt(m[1])}/${parseInt(m[2])}/${m[3].slice(-2)}`;
-}
-
