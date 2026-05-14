@@ -25,6 +25,10 @@ async function loadBadgeGeoJson() {
     const isMain = normalizeBadgeName(name) === `#${badge}`;
     const descriptionHtml = normalizeDescriptionHtml(getFeatureDescription(props));
     const details = extractPointDetailsFromDescription(descriptionHtml);
+	
+	console.log("details.place =", details.place);
+	console.log("description contains אתר =", descriptionHtml.includes("אתר"));
+	console.log(descriptionHtml);
 
     const marker = L.marker(latlng, {
       icon: createMarkerIcon(name, isMain)
