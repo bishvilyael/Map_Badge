@@ -32,28 +32,33 @@ async function loadBadgeGeoJson() {
 
     const shortDate = formatPopupDate(details.date);
 
-    const popupHtml = `
-      <div dir="rtl" style="font-family:Arial; line-height:1.5;">
-        <div><b>${escapeHtml(name)} ${escapeHtml(details.name || "")}</b></div>
-        <div>
-          ${escapeHtml(details.place || "")}
-          ${details.place && shortDate ? ", " : ""}
-          ${escapeHtml(shortDate)}
-        </div>
-        <div>
-          ${
-            details.fbUrl
-              ? `<a href="${escapeHtml(details.fbUrl)}" target="_blank" rel="noopener noreferrer">פוסט</a>`
-              : ""
-          }
-          ${
-            details.id
-              ? `, ID: ${escapeHtml(details.id)}`
-              : ""
-          }
-        </div>
-      </div>
-    `;
+	const popupHtml = `
+	  <div dir="rtl" style="font-family:Arial; line-height:1.5;">
+		<div><b>${escapeHtml(name)} - ${escapeHtml(details.name || "")}</b></div>
+
+		<div>
+		  ${escapeHtml(details.place || "")}
+		  ${details.place && shortDate ? ", " : ""}
+		  ${escapeHtml(shortDate)}
+		</div>
+
+		<div>
+		  ${
+			details.fbUrl
+			  ? `<a href="${escapeHtml(details.fbUrl)}" target="_blank" rel="noopener noreferrer">פוסט</a>`
+			  : ""
+		  }
+		  ${
+			details.id
+			  ? `, ID: ${escapeHtml(details.id)}`
+			  : ""
+		  }
+		</div>
+
+		<br/>
+		${extractImageHtml(descriptionHtml)}
+	  </div>
+	`;	
 
     marker.bindPopup(popupHtml, {
       maxWidth: 340,
