@@ -98,4 +98,13 @@ marker.bindPopup(popupHtml, {
   renderPlacesTable();
   fitIsraelView();
 }
+function formatPopupDate(dateText) {
+  if (!dateText) return "";
+
+  const m = String(dateText).match(/^(\d{2})-(\d{2})-(\d{4})$/);
+
+  if (!m) return dateText;
+
+  return `${parseInt(m[1])}/${parseInt(m[2])}/${m[3].slice(-2)}`;
+}
 
